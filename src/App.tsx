@@ -37,7 +37,7 @@ function App() {
         }
         const dataFromApi: UserFromApi[] = await response.json();
         console.log("Data received from API:", dataFromApi);
-        setUsers(dataFromApi);
+        setUsers(dataFromApi.data);
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
         console.error("Error fetching users:", errorMessage);
