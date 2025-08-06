@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { UserSelector, PlaceholderIcon } from './Shared';
 import type { UserFromApi } from './Shared';
 
-const API_BASE_URL = 'http://10.200.19.62:5000';
+const API_BASE_URL = 'http://10.34.4.136:5000';
 const ITEMS_PER_PAGE = 5; // Menampilkan 5 postur per halaman
 
 // --- Komponen baru untuk kontrol pagination ---

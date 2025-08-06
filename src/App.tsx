@@ -5,7 +5,7 @@ import KeylogsView from './components/Keylog';
 import PostureView from './components/Posture';
 import { UserFromApi } from './components/Shared';
 
-const API_BASE_URL = 'http://10.200.19.62:5000';
+const API_BASE_URL = 'http://10.34.4.136:5000';
 
 function App() {
   // State untuk mengelola login dan data aplikasi
