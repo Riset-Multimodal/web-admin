@@ -124,11 +124,11 @@ function PostureView({ selectedUserId, setSelectedUserId, users }: { selectedUse
                 {p.overhead_image_link && <img src={p.overhead_image_link} alt="Overhead view" className="w-full rounded-md border" />}
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 text-center">
-                <div className="bg-slate-100 rounded-md p-3"><p className="font-semibold text-slate-700">BC Combined</p><p className="text-lg">{p.final_scores_bc_combined_score ?? '-'}</p></div>
-                <div className="bg-slate-100 rounded-md p-3"><p className="font-semibold text-slate-700">ROSA Final</p><p className="text-lg">{p.final_scores_final_rosa_score ?? '-'}</p></div>
                 <div className="bg-slate-100 rounded-md p-3"><p className="font-semibold text-slate-700">Section A</p><p className="text-lg">{p.final_scores_section_a_score ?? '-'}</p></div>
                 <div className="bg-slate-100 rounded-md p-3"><p className="font-semibold text-slate-700">Section B</p><p className="text-lg">{p.final_scores_section_b_score ?? '-'}</p></div>
                 <div className="bg-slate-100 rounded-md p-3"><p className="font-semibold text-slate-700">Section C</p><p className="text-lg">{p.final_scores_section_c_score ?? '-'}</p></div>
+                <div className="bg-slate-100 rounded-md p-3"><p className="font-semibold text-slate-700">BC Combined</p><p className="text-lg">{p.final_scores_bc_combined_score ?? '-'}</p></div>
+                <div className="bg-slate-100 rounded-md p-3"><p className="font-semibold text-slate-700">ROSA Final</p><p className="text-lg">{p.final_scores_final_rosa_score ?? '-'}</p></div>
               </div>
             </div>
           );
