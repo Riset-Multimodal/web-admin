@@ -1,144 +1,287 @@
 import React, { useState, useEffect } from 'react';
-import { UserSelector, PlaceholderIcon } from './Shared';
-import type { ApiLog, UserFromApi} from './Shared';
+import { UserSelector, EmptyState, ErrorState, LoadingSpinner, PaginationControls } from './Shared';
+import type { ApiLog, UserFromApi } from './Shared';
 
 const API_BASE_URL = 'http://10.34.4.136:5000';
-const ITEMS_PER_PAGE = 20; // Menampilkan 20 log per halaman
+const ITEMS_PER_PAGE = 15;
 
-// --- Kita bisa gunakan kembali komponen PaginationControls ---
-const PaginationControls = ({ paginationInfo, onPageChange }: { paginationInfo: any, onPageChange: (page: number) => void }) => {
-  if (!paginationInfo || paginationInfo.total_pages <= 1) {
-    return null;
-  }
-  return (
-    <div className="flex justify-between items-center p-4 border-t bg-white">
-      <button onClick={() => onPageChange(paginationInfo.page - 1)} disabled={!paginationInfo.has_prev} className="px-4 py-2 text-sm font-medium text-white bg-slate-600 rounded-md disabled:bg-slate-300 disabled:cursor-not-allowed">Previous</button>
-      <span className="text-sm text-slate-600">Page <strong>{paginationInfo.page}</strong> of <strong>{paginationInfo.total_pages}</strong></span>
-      <button onClick={() => onPageChange(paginationInfo.page + 1)} disabled={!paginationInfo.has_next} className="px-4 py-2 text-sm font-medium text-white bg-slate-600 rounded-md disabled:bg-slate-300 disabled:cursor-not-allowed">Next</button>
-    </div>
-  );
-};
+interface KeylogsViewProps {
+  selectedUserId: string | null;
+  setSelectedUserId: (id: string | null) => void;
+  users: UserFromApi[];
+}
 
-
-function KeylogsView({ selectedUserId, setSelectedUserId, users }: { selectedUserId: string | null; setSelectedUserId: (id: string | null) => void; users: UserFromApi[] }) {
-  // --- 1. State Diubah ---
+function KeylogsView({ selectedUserId, setSelectedUserId, users }: KeylogsViewProps) {
   const [logs, setLogs] = useState<ApiLog[]>([]);
   const [paginationInfo, setPaginationInfo] = useState<any | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // --- Efek untuk mereset halaman saat user diganti ---
+  // Reset page when user changes
   useEffect(() => {
     setCurrentPage(1);
     setPaginationInfo(null);
   }, [selectedUserId]);
 
-  // --- 2. useEffect Diubah untuk Fetch Data ---
+  // Fetch keylog data
   useEffect(() => {
     if (!selectedUserId) {
       setLogs([]);
+      setPaginationInfo(null);
       return;
     }
 
     const fetchKeylogData = async () => {
       setIsLoading(true);
       setError(null);
+
       try {
         const apiUrl = `${API_BASE_URL}/keylog?email=${selectedUserId}&page=${currentPage}&per_page=${ITEMS_PER_PAGE}`;
         const response = await fetch(apiUrl);
-        if (!response.ok) throw new Error(`Failed to fetch keylog data: ${response.statusText}`);
 
-        // --- 3. Proses Respons Baru ---
+        if (!response.ok) {
+          throw new Error(`Failed to fetch keylog data: ${response.status} ${response.statusText}`);
+        }
+
         const responseJson = await response.json();
-        setLogs(responseJson.data);
+        setLogs(responseJson.data || []);
         setPaginationInfo(responseJson.pagination);
-
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'An unknown error occurred.');
+        const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
+        setError(errorMessage);
+        setLogs([]);
+        setPaginationInfo(null);
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchKeylogData();
-  }, [selectedUserId, currentPage]); // <-- Tambahkan currentPage sebagai dependency
+  }, [selectedUserId, currentPage]);
 
-  const formatTimestamp = (ts: string) => new Date(ts).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'long' });
-  const formatNumber = (num: number | null) => (num === null || num === undefined) ? 'N/A' : (num % 1 !== 0 ? Math.round(num) : num);
+  const formatTimestamp = (ts: string) => {
+    try {
+      return new Date(ts).toLocaleString('id-ID', {
+        dateStyle: 'medium',
+        timeStyle: 'medium',
+        timeZone: 'Asia/Jakarta'
+      });
+    } catch {
+      return 'Invalid date';
+    }
+  };
+
+  const formatNumber = (num: number | null) => {
+    if (num === null || num === undefined) return '-';
+    return typeof num === 'number' ? (num % 1 !== 0 ? num.toFixed(2) : num.toString()) : '-';
+  };
+
+  const retryFetch = () => {
+    if (selectedUserId) {
+      setError(null);
+      setCurrentPage(1);
+    }
+  };
+
+  const getSelectedUserName = () => {
+    if (!selectedUserId) return null;
+    return selectedUserId
+        .split('@')[0]
+        .replace(/[._]/g, ' ')
+        .replace(/\b\w/g, l => l.toUpperCase());
+  };
 
   const renderContent = () => {
     if (!selectedUserId) {
       return (
-        <div className="text-center py-24 px-6">
-          <PlaceholderIcon className="w-32 h-32 mx-auto text-slate-300 mb-4" />
-          <h3 className="text-xl font-semibold text-slate-700">Select a user to begin</h3>
-        </div>
+          <EmptyState
+              title="Select a user to view keylog data"
+              description="Choose a user from the dropdown above to start monitoring their typing patterns and activity."
+              className="py-20"
+          />
       );
     }
-    if (isLoading) return <p className="text-center py-24 text-slate-500">Loading keylog data...</p>;
-    if (error) return <p className="text-center py-24 text-red-500">Error: {error}</p>;
+
+    if (isLoading) {
+      return (
+          <div className="flex flex-col items-center justify-center py-20">
+            <LoadingSpinner className="w-8 h-8 text-blue-600 mb-4" />
+            <p className="text-slate-600">Loading keylog data...</p>
+            <p className="text-sm text-slate-500 mt-1">Fetching data for {getSelectedUserName()}</p>
+          </div>
+      );
+    }
+
+    if (error) {
+      return <ErrorState message={error} onRetry={retryFetch} />;
+    }
+
+    if (logs.length === 0) {
+      return (
+          <EmptyState
+              title="No keylog data found"
+              description={`No keylog entries are available for ${getSelectedUserName()}.`}
+              className="py-20"
+          />
+      );
+    }
 
     return (
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm text-left text-slate-500">
-          <thead className="text-xs text-slate-700 uppercase bg-slate-50">
-             {/* ... (Header tabel tidak berubah) ... */}
-            <tr>
-            <th scope="col" className="px-6 py-3">Timestamp</th>
-            <th scope="col" className="px-6 py-3 text-right">Keystrokes</th>
-            <th scope="col" className="px-6 py-3 text-right">Clicks (L/R)</th>
-            <th scope="col" className="px-6 py-3 text-right">Scroll (Up/Down)</th>
-            <th scope="col" className="px-6 py-3 text-right">Error Rate</th>
-            <th scope="col" className="px-6 py-3 text-right">Dwell Time (ms)</th>
-            <th scope="col" className="px-6 py-3 text-right">Flight Time (ms)</th>
-            <th scope="col" className="px-6 py-3 text-right">Pauses</th>
-            </tr>
-          </thead>
-          <tbody>
-            {logs.length > 0 ? (
-              logs.map((log) => (
-                <tr key={log.id} className="bg-white border-b last:border-b-0 hover:bg-slate-50">
-                  {/* ... (Baris tabel tidak berubah) ... */}
-                  <td className="px-6 py-4 font-mono text-slate-600">{formatTimestamp(log.created_at)}</td>
-                  <td className="px-6 py-4 text-right font-mono text-slate-600">{formatNumber(log.keystroke_count)}</td>
-                  <td className="px-6 py-4 text-right font-mono text-slate-600">{`${formatNumber(log.left_click_count)} / ${formatNumber(log.right_click_count)}`}</td>
-                  <td className="px-6 py-4 text-right font-mono text-slate-600">{`${formatNumber(log.scroll_up)} / ${formatNumber(log.scroll_down)}`}</td>
-                  <td className="px-6 py-4 text-right font-mono text-slate-600">{formatNumber(log.error_rate)}</td>
-                  <td className="px-6 py-4 text-right font-mono text-slate-600">{formatNumber(log.mean_dwell_time_ms)}</td>
-                  <td className="px-6 py-4 text-right font-mono text-slate-600">{formatNumber(log.mean_flight_time_ms)}</td>
-                  <td className="px-6 py-4 text-right font-mono text-slate-600">{formatNumber(log.pause_count)}</td>
-                </tr>
-              ))
-            ) : (
-              <tr><td colSpan={7} className="text-center py-16 px-6 text-slate-500">No keylog data available for this user.</td></tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+        <div className="overflow-hidden">
+          {/* Stats Cards */}
+          <div className="p-6 bg-slate-50 border-b border-slate-200">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="bg-white rounded-lg p-4 shadow-sm border border-slate-200">
+                <div className="text-sm font-medium text-slate-600">Total Sessions</div>
+                <div className="text-2xl font-bold text-slate-900">{paginationInfo?.total_items || logs.length}</div>
+              </div>
+              <div className="bg-white rounded-lg p-4 shadow-sm border border-slate-200">
+                <div className="text-sm font-medium text-slate-600">Avg Keystrokes</div>
+                <div className="text-2xl font-bold text-slate-900">
+                  {logs.length > 0
+                      ? Math.round(logs.reduce((sum, log) => sum + (log.keystroke_count || 0), 0) / logs.length)
+                      : '-'
+                  }
+                </div>
+              </div>
+              <div className="bg-white rounded-lg p-4 shadow-sm border border-slate-200">
+                <div className="text-sm font-medium text-slate-600">Avg Error Rate</div>
+                <div className="text-2xl font-bold text-slate-900">
+                  {logs.length > 0
+                      ? (logs.reduce((sum, log) => sum + (log.error_rate || 0), 0) / logs.length).toFixed(1)
+                      : '-'
+                  }
+                </div>
+              </div>
+              <div className="bg-white rounded-lg p-4 shadow-sm border border-slate-200">
+                <div className="text-sm font-medium text-slate-600">Current User</div>
+                <div className="text-lg font-semibold text-blue-700 truncate">{getSelectedUserName()}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Table */}
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-slate-100 border-b border-slate-200">
+              <tr>
+                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                  Timestamp
+                </th>
+                <th scope="col" className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                  Keystrokes
+                </th>
+                <th scope="col" className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                  Clicks (L/R)
+                </th>
+                <th scope="col" className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                  Scroll (Up/Down)
+                </th>
+                <th scope="col" className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                  Error Rate
+                </th>
+                <th scope="col" className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                  Dwell Time (ms)
+                </th>
+                <th scope="col" className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                  Flight Time (ms)
+                </th>
+                <th scope="col" className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                  Pauses
+                </th>
+              </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-slate-200">
+              {logs.map((log, index) => (
+                  <tr key={log.id} className={`hover:bg-slate-50 transition-colors ${
+                      index % 2 === 0 ? 'bg-white' : 'bg-slate-25'
+                  }`}>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-mono text-slate-900">
+                        {formatTimestamp(log.created_at)}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right">
+                      <div className="text-sm font-mono text-slate-900">
+                        {formatNumber(log.keystroke_count)}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right">
+                      <div className="text-sm font-mono text-slate-900">
+                        {formatNumber(log.left_click_count)} / {formatNumber(log.right_click_count)}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right">
+                      <div className="text-sm font-mono text-slate-900">
+                        {formatNumber(log.scroll_up)} / {formatNumber(log.scroll_down)}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right">
+                      <div className={`text-sm font-mono ${
+                          log.error_rate && log.error_rate > 5
+                              ? 'text-red-600 font-semibold'
+                              : 'text-slate-900'
+                      }`}>
+                        {formatNumber(log.error_rate)}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right">
+                      <div className="text-sm font-mono text-slate-900">
+                        {formatNumber(log.mean_dwell_time_ms)}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right">
+                      <div className="text-sm font-mono text-slate-900">
+                        {formatNumber(log.mean_flight_time_ms)}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right">
+                      <div className="text-sm font-mono text-slate-900">
+                        {formatNumber(log.pause_count)}
+                      </div>
+                    </td>
+                  </tr>
+              ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
     );
   };
 
   return (
-    <main className="flex-1 p-8 bg-slate-50">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-3xl font-bold text-slate-800">Keylogs</h2>
-          <UserSelector
-            selectedUserId={selectedUserId}
-            setSelectedUserId={setSelectedUserId}
-            users={users}
-          />
-        </div>
-        <div className="bg-white rounded-lg shadow-sm border border-slate-200 min-h-[300px] flex flex-col">
-          <div className="flex-grow">
-            {renderContent()}
+      <main className="flex-1 bg-slate-50">
+        {/* Header */}
+        <div className="bg-white border-b border-slate-200 px-8 py-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900">Keylog Monitoring</h1>
+              <p className="text-slate-600 mt-1">Track user typing patterns and keyboard activity</p>
+            </div>
+            <UserSelector
+                selectedUserId={selectedUserId}
+                setSelectedUserId={setSelectedUserId}
+                users={users}
+            />
           </div>
-           {/* --- 4. Tampilkan Kontrol Pagination --- */}
-          <PaginationControls paginationInfo={paginationInfo} onPageChange={setCurrentPage} />
         </div>
-      </div>
-    </main>
+
+        {/* Content */}
+        <div className="p-8">
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 min-h-[500px] flex flex-col">
+            <div className="flex-grow">
+              {renderContent()}
+            </div>
+            {paginationInfo && (
+                <PaginationControls
+                    paginationInfo={paginationInfo}
+                    onPageChange={setCurrentPage}
+                />
+            )}
+          </div>
+        </div>
+      </main>
   );
 }
 
