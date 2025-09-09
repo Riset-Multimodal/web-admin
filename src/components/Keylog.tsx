@@ -251,9 +251,9 @@ function KeylogsView({ selectedUserId, setSelectedUserId, users }: KeylogsViewPr
   };
 
   return (
-      <main className="flex-1 bg-slate-50">
-        {/* Header */}
-        <div className="bg-white border-b border-slate-200 px-8 py-6">
+      <main className="flex-1 bg-slate-50 min-h-screen lg:ml-72">
+        {/* Header (optional sticky) */}
+        <div className="bg-white border-b border-slate-200 px-8 py-6 sticky top-0 z-30">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h1 className="text-2xl font-bold text-slate-900">Keylog Monitoring</h1>

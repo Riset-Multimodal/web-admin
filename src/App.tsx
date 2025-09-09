@@ -1,3 +1,4 @@
+// App.tsx
 import React, { useState, useEffect } from 'react';
 import LoginView from './components/Login';
 import Sidebar from './components/Sidebar';
@@ -12,6 +13,26 @@ function App() {
   // Authentication state
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
+  // Cek localStorage saat pertama kali render
+  useEffect(() => {
+    const storedLogin = localStorage.getItem('isLoggedIn');
+    if (storedLogin === 'true') {
+      setIsLoggedIn(true);
+    }
+  }, []);
+
+  // Handle successful login
+  const handleLoginSuccess = () => {
+    setIsLoggedIn(true);
+    localStorage.setItem('isLoggedIn', 'true'); // persist login state
+  };
+
+  // Handle logout
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    localStorage.removeItem('isLoggedIn'); // hapus flag login
+  };
+
   // Application data state
   const [users, setUsers] = useState<UserFromApi[]>([]);
   const [activeView, setActiveView] = useState('keylogs');
@@ -21,29 +42,19 @@ function App() {
   const [isLoadingUsers, setIsLoadingUsers] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Handle successful login
-  const handleLoginSuccess = () => {
-    setIsLoggedIn(true);
-  };
-
   // Fetch users data after login
   useEffect(() => {
     if (!isLoggedIn) return;
 
     const fetchUsers = async () => {
-      console.log("User logged in. Fetching users...");
       setIsLoadingUsers(true);
       setError(null);
 
       try {
         const response = await fetch(`${API_BASE_URL}/users`);
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch users: ${response.status} ${response.statusText}`);
-        }
+        if (!response.ok) throw new Error(`Failed to fetch users: ${response.status} ${response.statusText}`);
 
         const dataFromApi: UserFromApi[] = await response.json();
-        console.log("Data received from API:", dataFromApi);
         setUsers(dataFromApi);
 
         // Auto-select first user if available
@@ -52,7 +63,6 @@ function App() {
         }
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
-        console.error("Error fetching users:", errorMessage);
         setError(errorMessage);
       } finally {
         setIsLoadingUsers(false);
@@ -62,7 +72,6 @@ function App() {
     fetchUsers();
   }, [isLoggedIn]);
 
-  // Retry function for error state
   const retryFetchUsers = () => {
     if (isLoggedIn) {
       fetchUsers();
@@ -72,18 +81,13 @@ function App() {
   const fetchUsers = async () => {
     setIsLoadingUsers(true);
     setError(null);
-
     try {
       const response = await fetch(`${API_BASE_URL}/users`);
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch users: ${response.status} ${response.statusText}`);
-      }
+      if (!response.ok) throw new Error(`Failed to fetch users: ${response.status} ${response.statusText}`);
 
       const dataFromApi: UserFromApi[] = await response.json();
       setUsers(dataFromApi);
 
-      // Auto-select first user if available and no user is currently selected
       if (dataFromApi.length > 0 && !selectedUserId) {
         setSelectedUserId(dataFromApi[0].user_email);
       }
@@ -95,15 +99,19 @@ function App() {
     }
   };
 
-  // Show login screen if not authenticated
+  // Jika belum login, tampilkan login page
   if (!isLoggedIn) {
     return <LoginView onLoginSuccess={handleLoginSuccess} />;
   }
 
-  // Main dashboard layout
   return (
       <div className="flex h-screen bg-slate-100">
-        <Sidebar activeView={activeView} setActiveView={setActiveView} />
+        {/* Sidebar + Logout */}
+        <Sidebar
+            activeView={activeView}
+            setActiveView={setActiveView}
+            onLogout={handleLogout} // kirim logout ke sidebar
+        />
 
         <div className="flex-1 flex flex-col min-w-0">
           {/* Loading State */}
@@ -137,7 +145,6 @@ function App() {
                         users={users}
                     />
                 )}
-
                 {activeView === 'posture' && (
                     <PostureView
                         selectedUserId={selectedUserId}

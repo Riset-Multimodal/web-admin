@@ -323,7 +323,7 @@ function PostureView({ selectedUserId, setSelectedUserId, users }: PostureViewPr
   };
 
   return (
-      <main className="flex-1 bg-slate-50">
+      <main className="flex-1 bg-slate-50 min-h-screen lg:ml-72">
         {/* Header */}
         <div className="bg-white border-b border-slate-200 px-8 py-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
