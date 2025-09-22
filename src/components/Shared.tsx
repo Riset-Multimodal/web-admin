@@ -2,6 +2,7 @@ import React from 'react';
 
 // Tipe untuk User yang datang dari API /users
 export interface UserFromApi {
+    name: string;
     user_email: string;
     created_at: string;
 }
@@ -131,7 +132,7 @@ export const UserSelector = ({
                 </option>
                 {Array.isArray(users) && users.map(user => (
                     <option key={user.user_email} value={user.user_email} className="text-slate-700">
-                        {formatUserName(user.user_email)}
+                        {user.name}
                     </option>
                 ))}
             </select>
