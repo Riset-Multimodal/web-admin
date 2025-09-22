@@ -7,7 +7,7 @@ import PostureView from './components/Posture';
 import { LoadingSpinner, ErrorState } from './components/Shared';
 import { UserFromApi } from './components/Shared';
 
-const API_BASE_URL = 'http://10.34.4.136:5000';
+const API_BASE_URL = 'https://admin-riset-be.akbarfikri.my.id';
 
 function App() {
   // Authentication state

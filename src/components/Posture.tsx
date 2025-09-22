@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { UserSelector, EmptyState, ErrorState, LoadingSpinner, PaginationControls } from './Shared';
 import type { UserFromApi } from './Shared';
 
-const API_BASE_URL = 'http://10.34.4.136:5000';
+const API_BASE_URL = 'https://admin-riset-be.akbarfikri.my.id';
 const ITEMS_PER_PAGE = 6;
 
 interface PostureData {
