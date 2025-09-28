@@ -4,6 +4,7 @@ import LoginView from './components/Login';
 import Sidebar from './components/Sidebar';
 import KeylogsView from './components/Keylog';
 import PostureView from './components/Posture';
+import TlxView from './components/TlxView';
 import { LoadingSpinner, ErrorState } from './components/Shared';
 import { UserFromApi } from './components/Shared';
 
@@ -114,8 +115,8 @@ function App() {
         />
 
         <div className="flex-1 flex flex-col min-w-0">
-          {/* Loading State */}
-          {isLoadingUsers && (
+          {/* Loading State - only show for views that need user data */}
+          {isLoadingUsers && (activeView === 'keylogs' || activeView === 'posture') && (
               <div className="flex-1 flex flex-col items-center justify-center bg-white">
                 <LoadingSpinner className="w-12 h-12 text-blue-600 mb-4" />
                 <h3 className="text-lg font-semibold text-slate-700 mb-2">Loading Dashboard</h3>
@@ -125,8 +126,8 @@ function App() {
               </div>
           )}
 
-          {/* Error State */}
-          {error && !isLoadingUsers && (
+          {/* Error State - only show for views that need user data */}
+          {error && !isLoadingUsers && (activeView === 'keylogs' || activeView === 'posture') && (
               <div className="flex-1 flex items-center justify-center bg-white">
                 <ErrorState
                     message={`Unable to load user data: ${error}`}
@@ -136,6 +137,12 @@ function App() {
           )}
 
           {/* Main Content */}
+          {/* NASA-TLX View doesn't need user loading states */}
+          {activeView === 'tlx' && (
+              <TlxView />
+          )}
+
+          {/* User-dependent views */}
           {!isLoadingUsers && !error && (
               <>
                 {activeView === 'keylogs' && (
