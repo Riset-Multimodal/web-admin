@@ -21,10 +21,12 @@ interface PostureData {
 interface PostureViewProps {
   selectedUserId: string | null;
   setSelectedUserId: (id: string | null) => void;
+  selectedFaculty: string;
+  setSelectedFaculty: (faculty: string) => void;
   users: UserFromApi[];
 }
 
-function PostureView({ selectedUserId, setSelectedUserId, users }: PostureViewProps) {
+function PostureView({ selectedUserId, setSelectedUserId, selectedFaculty, setSelectedFaculty, users }: PostureViewProps) {
   const [postureData, setPostureData] = useState<PostureData[]>([]);
   const [paginationInfo, setPaginationInfo] = useState<any | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -133,10 +135,14 @@ function PostureView({ selectedUserId, setSelectedUserId, users }: PostureViewPr
 
   const getSelectedUserName = () => {
     if (!selectedUserId) return null;
-    return selectedUserId
-        .split('@')[0]
-        .replace(/[._]/g, ' ')
-        .replace(/\b\w/g, l => l.toUpperCase());
+    const user = users.find(u => u.user_email === selectedUserId);
+    return user ? user.name : selectedUserId;
+  };
+
+  const getSelectedUserFaculty = () => {
+    if (!selectedUserId) return null;
+    const user = users.find(u => u.user_email === selectedUserId);
+    return user ? user.faculty : null;
   };
 
   const renderImageCard = (imageUrl: string | undefined, title: string, icon: string) => {
@@ -169,7 +175,7 @@ function PostureView({ selectedUserId, setSelectedUserId, users }: PostureViewPr
       return (
           <EmptyState
               title="Select a user to view posture data"
-              description="Choose a user from the dropdown above to start analyzing their posture and ROSA scores."
+              description="Choose a faculty and user from the dropdowns above to start analyzing their posture and ROSA scores."
               className="py-20"
           />
       );
@@ -228,7 +234,8 @@ function PostureView({ selectedUserId, setSelectedUserId, users }: PostureViewPr
               </div>
               <div className="bg-white rounded-lg p-4 shadow-sm">
                 <div className="text-sm font-medium text-slate-600">Current User</div>
-                <div className="text-lg font-semibold text-blue-700 truncate">{getSelectedUserName()}</div>
+                <div className="text-base font-semibold text-blue-700 truncate">{getSelectedUserName()}</div>
+                <div className="text-xs text-slate-500 truncate mt-0.5">{getSelectedUserFaculty()}</div>
               </div>
             </div>
           </div>
@@ -326,7 +333,7 @@ function PostureView({ selectedUserId, setSelectedUserId, users }: PostureViewPr
       <main className="flex-1 bg-slate-50 min-h-screen lg:ml-72">
         {/* Header */}
         <div className="bg-white border-b border-slate-200 px-8 py-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex flex-col gap-4">
             <div>
               <h1 className="text-2xl font-bold text-slate-900">Posture Analysis</h1>
               <p className="text-slate-600 mt-1">Monitor workspace ergonomics and ROSA assessments</p>
@@ -334,6 +341,8 @@ function PostureView({ selectedUserId, setSelectedUserId, users }: PostureViewPr
             <UserSelector
                 selectedUserId={selectedUserId}
                 setSelectedUserId={setSelectedUserId}
+                selectedFaculty={selectedFaculty}
+                setSelectedFaculty={setSelectedFaculty}
                 users={users}
             />
           </div>

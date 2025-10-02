@@ -8,10 +8,12 @@ const ITEMS_PER_PAGE = 15;
 interface KeylogsViewProps {
   selectedUserId: string | null;
   setSelectedUserId: (id: string | null) => void;
+  selectedFaculty: string;
+  setSelectedFaculty: (faculty: string) => void;
   users: UserFromApi[];
 }
 
-function KeylogsView({ selectedUserId, setSelectedUserId, users }: KeylogsViewProps) {
+function KeylogsView({ selectedUserId, setSelectedUserId, selectedFaculty, setSelectedFaculty, users }: KeylogsViewProps) {
   const [logs, setLogs] = useState<ApiLog[]>([]);
   const [paginationInfo, setPaginationInfo] = useState<any | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -86,10 +88,14 @@ function KeylogsView({ selectedUserId, setSelectedUserId, users }: KeylogsViewPr
 
   const getSelectedUserName = () => {
     if (!selectedUserId) return null;
-    return selectedUserId
-        .split('@')[0]
-        .replace(/[._]/g, ' ')
-        .replace(/\b\w/g, l => l.toUpperCase());
+    const user = users.find(u => u.user_email === selectedUserId);
+    return user ? user.name : selectedUserId;
+  };
+
+  const getSelectedUserFaculty = () => {
+    if (!selectedUserId) return null;
+    const user = users.find(u => u.user_email === selectedUserId);
+    return user ? user.faculty : null;
   };
 
   const renderContent = () => {
@@ -97,7 +103,7 @@ function KeylogsView({ selectedUserId, setSelectedUserId, users }: KeylogsViewPr
       return (
           <EmptyState
               title="Select a user to view keylog data"
-              description="Choose a user from the dropdown above to start monitoring their typing patterns and activity."
+              description="Choose a faculty and user from the dropdowns above to start monitoring their typing patterns and activity."
               className="py-20"
           />
       );
@@ -156,7 +162,8 @@ function KeylogsView({ selectedUserId, setSelectedUserId, users }: KeylogsViewPr
               </div>
               <div className="bg-white rounded-lg p-4 shadow-sm border border-slate-200">
                 <div className="text-sm font-medium text-slate-600">Current User</div>
-                <div className="text-lg font-semibold text-blue-700 truncate">{getSelectedUserName()}</div>
+                <div className="text-base font-semibold text-blue-700 truncate">{getSelectedUserName()}</div>
+                <div className="text-xs text-slate-500 truncate mt-0.5">{getSelectedUserFaculty()}</div>
               </div>
             </div>
           </div>
@@ -254,7 +261,7 @@ function KeylogsView({ selectedUserId, setSelectedUserId, users }: KeylogsViewPr
       <main className="flex-1 bg-slate-50 min-h-screen lg:ml-72">
         {/* Header (optional sticky) */}
         <div className="bg-white border-b border-slate-200 px-8 py-6 sticky top-0 z-30">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex flex-col gap-4">
             <div>
               <h1 className="text-2xl font-bold text-slate-900">Keylog Monitoring</h1>
               <p className="text-slate-600 mt-1">Track user typing patterns and keyboard activity</p>
@@ -262,6 +269,8 @@ function KeylogsView({ selectedUserId, setSelectedUserId, users }: KeylogsViewPr
             <UserSelector
                 selectedUserId={selectedUserId}
                 setSelectedUserId={setSelectedUserId}
+                selectedFaculty={selectedFaculty}
+                setSelectedFaculty={setSelectedFaculty}
                 users={users}
             />
           </div>

@@ -25,19 +25,20 @@ function App() {
   // Handle successful login
   const handleLoginSuccess = () => {
     setIsLoggedIn(true);
-    localStorage.setItem('isLoggedIn', 'true'); // persist login state
+    localStorage.setItem('isLoggedIn', 'true');
   };
 
   // Handle logout
   const handleLogout = () => {
     setIsLoggedIn(false);
-    localStorage.removeItem('isLoggedIn'); // hapus flag login
+    localStorage.removeItem('isLoggedIn');
   };
 
   // Application data state
   const [users, setUsers] = useState<UserFromApi[]>([]);
   const [activeView, setActiveView] = useState('keylogs');
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [selectedFaculty, setSelectedFaculty] = useState<string>('all');
 
   // Loading and error states
   const [isLoadingUsers, setIsLoadingUsers] = useState(true);
@@ -88,6 +89,7 @@ function App() {
 
       const dataFromApi: UserFromApi[] = await response.json();
       setUsers(dataFromApi);
+      console.log(dataFromApi)
 
       if (dataFromApi.length > 0 && !selectedUserId) {
         setSelectedUserId(dataFromApi[0].user_email);
@@ -111,7 +113,7 @@ function App() {
         <Sidebar
             activeView={activeView}
             setActiveView={setActiveView}
-            onLogout={handleLogout} // kirim logout ke sidebar
+            onLogout={handleLogout}
         />
 
         <div className="flex-1 flex flex-col min-w-0">
@@ -149,6 +151,8 @@ function App() {
                     <KeylogsView
                         selectedUserId={selectedUserId}
                         setSelectedUserId={setSelectedUserId}
+                        selectedFaculty={selectedFaculty}
+                        setSelectedFaculty={setSelectedFaculty}
                         users={users}
                     />
                 )}
@@ -156,6 +160,8 @@ function App() {
                     <PostureView
                         selectedUserId={selectedUserId}
                         setSelectedUserId={setSelectedUserId}
+                        selectedFaculty={selectedFaculty}
+                        setSelectedFaculty={setSelectedFaculty}
                         users={users}
                     />
                 )}

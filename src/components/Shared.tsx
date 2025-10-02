@@ -1,9 +1,10 @@
 import React from 'react';
 
-// Tipe untuk User yang datang dari API /users
+// Updated UserFromApi interface with faculty field
 export interface UserFromApi {
     name: string;
     user_email: string;
+    faculty: string;
     created_at: string;
 }
 
@@ -103,43 +104,115 @@ export const LoadingSpinner = ({ className = 'w-6 h-6' }) => (
     </svg>
 );
 
-// Improved UserSelector component
+// Faculty Filter Component
+export const FacultyFilter = ({
+                                  selectedFaculty,
+                                  setSelectedFaculty,
+                                  users = []
+                              }: {
+    selectedFaculty: string;
+    setSelectedFaculty: (faculty: string) => void;
+    users: UserFromApi[]
+}) => {
+    // Get unique faculties from users
+    const faculties = React.useMemo(() => {
+        const uniqueFaculties = new Set(
+            users.map(user => (user.faculty && user.faculty.trim()) || "Unknown")
+        );
+        return Array.from(uniqueFaculties).sort();
+    }, [users]);
+
+    return (
+        <div className="relative">
+            <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                Filter by Faculty
+            </label>
+            <select
+                value={selectedFaculty}
+                onChange={(e) => setSelectedFaculty(e.target.value)}
+                className="appearance-none w-full bg-white border border-slate-300 rounded-lg py-2.5 pl-4 pr-10 text-slate-700 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors shadow-sm hover:border-slate-400"
+            >
+                <option value="all" className="text-slate-700">
+                    All Faculties ({users.length} users)
+                </option>
+                {faculties.map((faculty, idx) => {
+                    const count = users.filter(u => u.faculty == faculty).length;
+                    return (
+                        <option key={`${faculty}-${idx}`} value={faculty} className="text-slate-700">
+                            {faculty || "Unknown"} ({count})
+                        </option>
+                    );
+                })}
+            </select>
+            <div className="pointer-events-none absolute bottom-0 right-0 flex items-center px-3 pb-2.5 text-slate-400">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+            </div>
+        </div>
+    );
+};
+
+// Improved UserSelector component with faculty filtering
 export const UserSelector = ({
                                  selectedUserId,
                                  setSelectedUserId,
+                                 selectedFaculty,
+                                 setSelectedFaculty,
                                  users = []
                              }: {
     selectedUserId: string | null;
     setSelectedUserId: (id: string | null) => void;
+    selectedFaculty: string;
+    setSelectedFaculty: (faculty: string) => void;
     users: UserFromApi[]
 }) => {
-    const formatUserName = (email: string) => {
-        return email
-            .split('@')[0]
-            .replace(/[._]/g, ' ')
-            .replace(/\b\w/g, l => l.toUpperCase());
-    };
+    // Filter users based on selected faculty
+    const filteredUsers = React.useMemo(() => {
+        if (selectedFaculty === 'all') {
+            return users;
+        }
+        return users.filter(user => user.faculty === selectedFaculty);
+    }, [users, selectedFaculty]);
+
+    // Reset selected user if it's not in the filtered list
+    React.useEffect(() => {
+        if (selectedUserId && !filteredUsers.find(u => u.user_email === selectedUserId)) {
+            setSelectedUserId(filteredUsers.length > 0 ? filteredUsers[0].user_email : null);
+        }
+    }, [filteredUsers, selectedUserId, setSelectedUserId]);
 
     return (
-        <div className="relative">
-            <select
-                value={selectedUserId || ''}
-                onChange={(e) => setSelectedUserId(e.target.value || null)}
-                className="appearance-none w-64 bg-white border border-slate-300 rounded-lg py-2.5 pl-4 pr-10 text-slate-700 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors shadow-sm hover:border-slate-400"
-            >
-                <option value="" disabled className="text-slate-500">
-                    {users.length === 0 ? 'Loading users...' : 'Select a User...'}
-                </option>
-                {Array.isArray(users) && users.map(user => (
-                    <option key={user.user_email} value={user.user_email} className="text-slate-700">
-                        {user.name}
+        <div className="flex flex-col sm:flex-row gap-3">
+            <FacultyFilter
+                selectedFaculty={selectedFaculty}
+                setSelectedFaculty={setSelectedFaculty}
+                users={users}
+            />
+
+            <div className="relative">
+                <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                    Select User
+                </label>
+                <select
+                    value={selectedUserId || ''}
+                    onChange={(e) => setSelectedUserId(e.target.value || null)}
+                    className="appearance-none w-full sm:w-64 bg-white border border-slate-300 rounded-lg py-2.5 pl-4 pr-10 text-slate-700 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors shadow-sm hover:border-slate-400"
+                >
+                    <option value="" disabled className="text-slate-500">
+                        {filteredUsers.length === 0 ? 'No users available' : 'Select a User...'}
                     </option>
-                ))}
-            </select>
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
+                    {filteredUsers.map(user => (
+                        <option key={user.user_email} value={user.user_email} className="text-slate-700">
+                            {user.name}
+                        </option>
+                    ))}
+                </select>
+                <div className="pointer-events-none absolute bottom-0 right-0 flex items-center px-3 pb-2.5 text-slate-400">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                </div>
             </div>
         </div>
     );
@@ -186,14 +259,14 @@ export const PaginationControls = ({
             </div>
 
             <div className="flex items-center gap-4 text-sm text-slate-600">
-        <span>
-          Page <span className="font-semibold text-slate-800">{page}</span> of{' '}
-            <span className="font-semibold text-slate-800">{total_pages}</span>
-        </span>
+                <span>
+                    Page <span className="font-semibold text-slate-800">{page}</span> of{' '}
+                    <span className="font-semibold text-slate-800">{total_pages}</span>
+                </span>
                 {total_items && (
                     <span className="text-slate-500">
-            ({total_items} total items)
-          </span>
+                        ({total_items} total items)
+                    </span>
                 )}
             </div>
         </div>
