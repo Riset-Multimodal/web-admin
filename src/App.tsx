@@ -7,6 +7,7 @@ import PostureView from './components/Posture';
 import TlxView from './components/TlxView';
 import { LoadingSpinner, ErrorState } from './components/Shared';
 import { UserFromApi } from './components/Shared';
+import NordicView from "./components/NordicView";
 
 const API_BASE_URL = 'https://admin-riset-be.akbarfikri.my.id';
 
@@ -143,6 +144,8 @@ function App() {
           {activeView === 'tlx' && (
               <TlxView />
           )}
+
+          {activeView === 'nordic' && (<NordicView />)}
 
           {/* User-dependent views */}
           {!isLoadingUsers && !error && (
